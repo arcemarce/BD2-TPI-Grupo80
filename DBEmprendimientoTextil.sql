@@ -86,3 +86,50 @@ create table DetallePromociones(
     IdProducto int references Producto(IdProducto)    
 );
 
+use DBEmprendimientoTextil; 
+GO
+
+create table Cliente(
+    IdCliente int primary key identity (1, 1), 
+    Nombre varchar(80) not null,
+    Apellido varchar(80) not null,
+    Telefono varchar(14), 
+    Mail varchar(100) not null unique,
+    Activo bit default 1
+);
+
+create table Venta(
+    IdVenta int PRIMARY KEY identity (1, 1),
+    Fecha DATETIME not null default getdate(),
+    TotalSinIva decimal (16, 2) not null,
+    TotalConIva decimal (16, 2) not null,
+
+    IdCliente int REFERENCES Cliente(IdCliente),
+    IdMedioDePago int REFERENCES MediosDePago(IdMedioDePago),
+    CONSTRAINT CK_Venta_Totales_NoNegativos check (TotalSinIva >= 0 and TotalConIva >= 0),
+    CONSTRAINT CK_Venta_Total_conIva_Mayor check (TotalConIva >= TotalSinIva),
+    CONSTRAINT CK_Venta_Fecha_NoFutura check (Fecha <= GETDATE())
+);
+
+create table Detalle_Venta(
+    IdDetalle int PRIMARY KEY identity (1, 1),
+    Cantidad int not null check (Cantidad > 0), 
+    PrecioUnitarioSinIva decimal (16, 2) not null check(PrecioUnitarioSinIva >= 0),
+
+    IdVenta int REFERENCES Venta(IdVenta) not null,
+    IdProducto int REFERENCES Producto(IdProducto) not null,
+    IdDetallePromocion int REFERENCES DetallePromociones(IdDetallePromocion)
+);
+
+create table MovimientoStock(
+    IdMovimiento int PRIMARY KEY identity (1, 1),
+    TipoMovimimiento varchar (50) not null, 
+    Cantidad int not null check(Cantidad <> 0),
+    FechaMovimiento datetime not null default GETDATE(),
+    DescripcionMotivo varchar(150) not null,
+
+    IdProducto int REFERENCES Producto(IdProducto)not null,
+    IdVenta int REFERENCES Venta(IdVenta),
+
+    CONSTRAINT CK_MovimientoStock_Fecha_NoFutura check (FechaMovimiento <= GETDATE())
+);
